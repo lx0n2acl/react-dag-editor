@@ -53,10 +53,11 @@ body {
 
 .canvas svg .newEdge { 
     pointer-events: none;
+    stroke: red;
 }
 
 .canvas svg .existingEdge {  
-    stroke: red;
+    stroke: blue;
 }
 
 

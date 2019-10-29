@@ -44,7 +44,7 @@ const DagEdge = ({ sourceCoords, targetCoords, currentHeadLocationCoords }) => {
 
     return (
         <path markerEnd="url(#arrow)"
-            className={currentHeadLocationCoords !== null ? "newEdge" : "existingEdge"}
+            className={!targetCoords ? "newEdge" : "existingEdge"}
             fill="transparent"
             d={line}
             strokeWidth={3}
@@ -303,7 +303,8 @@ export default class DagEditor extends React.Component {
 
                     </g>
                     <g>
-                        {edges.map(e => <DagEdge key={e.id} {...e}></DagEdge>)}
+                        {edges.map(e => <DagEdge key={e.id} sourceCoords={e.sourceNode.getEdgeSourceCoords()}
+                            targetCoords={e.targetNode.getEdgeTargetCoords()}  ></DagEdge>)}
                     </g>
                     <g>
                         {creatingEdge !== null ?
