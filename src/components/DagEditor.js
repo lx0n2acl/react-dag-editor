@@ -48,7 +48,6 @@ const DagEdge = ({ sourceCoords, targetCoords, currentHeadLocationCoords }) => {
             fill="transparent"
             d={line}
             strokeWidth={3}
-            stroke={"blue"}
         />
 
     );
@@ -168,7 +167,7 @@ export default class DagEditor extends React.Component {
         if (selectedNode !== null) {
             this.setState((ps) => ({ //
                 ...ps,
-                nodes: ps.nodes.map(n => n.id === id ? { ...n, title } : n)
+                nodes: ps.nodes.map(n => n.id === id ? Object.assign(n, { title }) : n)
             }));
         }
     }
