@@ -6,20 +6,27 @@ import * as d3dag from 'd3-dag';
 
 const CREATE_NODE = "CREATE_NODE";
 const RESET_LAYOUT = "RESET_LAYOUT";
+const SAVE_LAYOUT = "SAVE_LAYOUT";
+const LOAD_LAYOUT = "LOAD_LAYOUT";
 
 // const NODE_WIDTH = 200;
 // const NODE_HEIGHT = 50;
 
 class DagNodeData {
-    constructor(id, title, x, y) {
+    constructor(id, title, layer, x, y) {
         this.id = id;
         this.title = title;
+        this.layer = layer;
         this.x = x;
         this.y = y;
         this.w = 200;
         this.h = 50;
         this.getEdgeSourceCoords = () => { return { x: this.x + (this.w / 2), y: this.y + this.h } }
         this.getEdgeTargetCoords = () => { return { x: this.x + (this.w / 2), y: this.y } }
+    }
+
+    serialize() {
+        return JSON.stringify(this);
     }
 }
 
@@ -30,10 +37,13 @@ class DagEdgeData {
         this.targetNode = targetNode;
 
     }
+
+    serialize() {
+        return JSON.stringify(this);
+    }
 }
 
 const DagEdge = ({ sourceCoords, targetCoords, currentHeadLocationCoords }) => {
-    console.log(sourceCoords, targetCoords, currentHeadLocationCoords)
     const { x: sx, y: sy } = sourceCoords;
     const { x: tx, y: ty } = targetCoords || currentHeadLocationCoords;
 
@@ -68,7 +78,7 @@ class DagNode extends React.Component {
         this.setState({ titleInput: e.target.value });
     }
     render() {
-        const { id, title, x, y, w, h, selected, dragNode, dragNewEdge, onTextSubmit, setHoverNode } = this.props;
+        const { id, title, layer, x, y, w, h, selected, dragNode, dragNewEdge, onTextSubmit, setHoverNode } = this.props;
 
         return (
             <g
@@ -174,9 +184,54 @@ export default class DagEditor extends React.Component {
     handleMenuClick(command) {
         switch (command) {
             case CREATE_NODE:
-                this.createNode(new DagNodeData(Date.now(), "Your title here...", 10, 10))
+                this.createNode(new DagNodeData(Date.now(), "Your title here...", 0, 10, 10))
 
                 break;
+            case RESET_LAYOUT:
+                // let crap = this.state.edges.map(e => { return { e.sourceNode, target: e.targetNode.id } });
+                // console.log(crap)
+
+                // edgeData.push(new DagEdgeData(Date.now(), new DagNodeData(undefined), this.state.nodes[0]));
+                let dag = d3dag.dagConnect()
+                    .sourceAccessor((e) => e.sourceNode.id)
+                    .targetAccessor((e) => e.targetNode.id)(this.state.edges);
+
+                d3dag.sugiyama()
+                    .size([1000, 600])
+                    .coord(d3dag.coordGreedy())
+                    .layering(d3dag.layeringCoffmanGraham().width(100))(dag);
+
+
+                let newNodes = dag.descendants().map(d =>
+                    Object.assign(this.state.nodes.find(n => n.id == d.id), { x: d.x }, { y: d.y + (d.layer * 100) }, { layer: d.layer }));
+
+
+                this.setState({ nodes: newNodes })
+                break;
+            // case SAVE_LAYOUT:
+            //     //this.saveLayout();
+
+            //     localStorage.setItem("dagLayout_nodes", JSON.stringify(this.state.nodes));
+            //     localStorage.setItem("dagLayout_edges", JSON.stringify(this.state.edges));
+
+            //     break;
+            // case LOAD_LAYOUT:
+            //     //this.saveLayout();
+            //     this.setState({ nodes: JSON.parse(localStorage.getItem("dagLayout_nodes")) });
+
+            //     let nodes = JSON.parse(localStorage.getItem("dagLayout_nodes")).map(n => Object.assign(new DagNodeData(), n));
+            //     let edges = JSON.parse(localStorage.getItem("dagLayout_edges")).map(e =>
+            //         Object.assign(new DagEdgeData(),
+            //             {
+            //                 ...e,
+            //                 sourceNode: new DagNodeData(e.sourceNode),
+            //                 targetNode: new DagNodeData(e.targetNode)
+            //             }
+            //         ));
+            //     console.log(edges)
+            //     this.setState({ nodes, edges });
+
+            //     break;
             default:
 
         }
@@ -195,7 +250,7 @@ export default class DagEditor extends React.Component {
     }
 
     setHoverNode(n) {
-        console.log("hovering over", n)
+        console.log("hovering over node: ", n)
         this.setState({
             hoveringOverNode: n,
         });
@@ -253,8 +308,6 @@ export default class DagEditor extends React.Component {
     handleMouseUp(e) {
         const { creatingEdge, hoveringOverNode } = this.state;
         if (creatingEdge !== null && hoveringOverNode !== null) {
-            console.log("creating edge source", creatingEdge.sourceNode)
-            console.log("dropped over", hoveringOverNode)
             this.createEdge(new DagEdgeData(Date.now(), creatingEdge.sourceNode, hoveringOverNode))
         }
 
@@ -271,12 +324,11 @@ export default class DagEditor extends React.Component {
     }
     render() {
         const { nodes, edges, creatingEdge } = this.state;
-        console.log(nodes)
-        console.log(edges)
+
         return (
             <div className="canvas">
                 <div className="toolbar">
-                    {[[CREATE_NODE, "Create Node"], [RESET_LAYOUT, "Reset Layout"]].map(menu => (
+                    {[[CREATE_NODE, "Create Node"], [RESET_LAYOUT, "Reset Layout"], [SAVE_LAYOUT, "Save Layout"], [LOAD_LAYOUT, "Load Layout"],].map(menu => (
                         <button key={menu[0]}
                             onClick={() => this.handleMenuClick(menu[0])}>
                             {menu[1]}
