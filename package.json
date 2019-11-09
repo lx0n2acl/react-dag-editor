@@ -2,6 +2,7 @@
   "name": "react-dag-editor",
   "version": "0.1.0",
   "private": true,
+  "description": "A small tool to edit svg DAGs (directed acyclic graphs) using react and a bit of d3",
   "dependencies": {
     "d3": "^5.12.0",
     "d3-dag": "^0.3.1",
